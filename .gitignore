@@ -1,0 +1,15 @@
+# Ignore directory in any project's directiories
+__pycache__
+logs
+.venv
+.vscode
+.idea
+.env
+.db
+
+# Ignore all files in directory
+/database/postcards/*
+
+# Ignore all temporary *.pyc files in any project's directiories
+*.pyc
+

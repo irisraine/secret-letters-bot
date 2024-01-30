@@ -1,0 +1,26 @@
+[tool.poetry]
+name = "secret-letters-bot"
+version = "0.1.0"
+description = ""
+authors = ["Iris-Raine <iris.raine.darkest.star@gmail.com>"]
+readme = "README.md"
+packages = [
+  {include = "engine"}
+]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+nextcord = "^2.6.0"
+python-dotenv = "^1.0.1"
+requests = "^2.31.0"
+logging = "^0.4.9.6"
+
+[tool.poetry.group.dev.dependencies]
+flake8 = "^7.0.0"
+
+[tool.poetry.scripts]
+secret-letters-bot = "engine.run:run_discord_bot"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
