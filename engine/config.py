@@ -1,12 +1,12 @@
 SENDING_TARGET_DATE = {
-    'day': 30,
-    'month': 1,
+    'day': 14,
+    'month': 2,
     'year': 2024
 }
 
 SENDING_TARGET_TIME = {
-    'hour': 18,
-    'minute': 34
+    'hour': 6,
+    'minute': 0
 }
 
 BASIC_COLOR_CODE = (48, 213, 200)
