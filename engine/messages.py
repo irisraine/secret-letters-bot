@@ -82,7 +82,7 @@ recipient_error = MessageContainer(
                 title=ERROR_HEADER,
                 description=f"Пользователь с таким именем отсутствует на сервере."
     )
-scheduled_already_error = MessageContainer(
+send_already_error = MessageContainer(
                 title=ERROR_HEADER,
                 description=f"Вы уже отправили валентинку этому пользователю!"
     )
@@ -95,7 +95,7 @@ self_sending_error = MessageContainer(
                 description=f"Конечно, технически вы могли бы отправить валентинку сами себе, но это грустно, "
                             f"поэтому давайте оставим эту затею."
     )
-scheduled_success = MessageContainer(
+send_success = MessageContainer(
                 title="Отправлено!",
                 description=f"Валентинка создана! Она будет отправлена указанному пользователю 14 февраля."
     )

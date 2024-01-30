@@ -87,12 +87,12 @@ def get_letters_db_records():
             yield row
 
 
-def is_letter_scheduled_already(sender_discord_id, recipient_discord_id):
+def is_letter_send_already(sender_discord_id, recipient_discord_id):
     with sqlite3.connect("database/main.db") as db_connect:
         cursor = db_connect.cursor()
         cursor.execute("SELECT * FROM letters WHERE sender_discord_id = ? AND recipient_discord_id = ?",
                        (sender_discord_id, recipient_discord_id))
-        return cursor.fetchone()
+        return True if cursor.fetchone() else False
 
 
 def get_count(sender_discord_id):

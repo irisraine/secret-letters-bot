@@ -71,9 +71,9 @@ class LetterForm(nextcord.ui.Modal):
             return await interaction.response.send_message(
                 embed=messages.recipient_error.embed, ephemeral=True
             )
-        elif sql.is_letter_scheduled_already(interaction.user.id, recipient.id):
+        elif sql.is_letter_send_already(interaction.user.id, recipient.id):
             return await interaction.response.send_message(
-                embed=messages.scheduled_already_error.embed, ephemeral=True
+                embed=messages.send_already_error.embed, ephemeral=True
             )
         if self.image_url.value:
             image_attachment_path = image_download(self.image_url.value)
@@ -99,10 +99,10 @@ class LetterForm(nextcord.ui.Modal):
         )
         sql.increment_count(interaction.user.id)
         logging.info(f'Валентинка для {recipient.name} создана')
-        return await interaction.response.send_message(embed=messages.scheduled_success.embed, ephemeral=True)
+        return await interaction.response.send_message(embed=messages.send_success.embed, ephemeral=True)
 
 
-class ButtonMainMenu(nextcord.ui.View):
+class MainMenuButtons(nextcord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
 
@@ -159,7 +159,7 @@ class LettersListDropdown(nextcord.ui.Select):
         await interaction.edit_original_message(
             embed=letter_message.embed,
             file=letter_message.image,
-            view=ButtonDeleteLetter(letter_db_record[0])
+            view=DeleteLetterButton(letter_db_record[0])
         )
 
 
@@ -169,7 +169,7 @@ class LettersList(nextcord.ui.View):
         self.add_item(LettersListDropdown(options=options))
 
 
-class ButtonDeleteLetter(nextcord.ui.View):
+class DeleteLetterButton(nextcord.ui.View):
     def __init__(self, record_id):
         super().__init__(timeout=None)
         self.record_id = record_id
@@ -204,7 +204,7 @@ async def start(ctx):
     await ctx.send(
         embed=messages.instruction.embed,
         file=messages.instruction.image,
-        view=ButtonMainMenu()
+        view=MainMenuButtons()
     )
 
 
