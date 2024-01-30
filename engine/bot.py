@@ -4,6 +4,7 @@ from nextcord.ext import commands, tasks
 from dotenv import load_dotenv
 import logging
 import datetime
+import os
 import engine.sql as sql
 import engine.config as config
 import engine.messages as messages
@@ -188,6 +189,8 @@ class ButtonDeleteLetter(nextcord.ui.View):
 @client.event
 async def on_ready():
     logging.info(f'Бот залогинен под именем: {client.user.name}')
+    if not os.path.exists('database/postcards'):
+        os.makedirs('database/postcards')
     sql.create_tables()
     send_letters.start()
 
