@@ -222,29 +222,31 @@ async def start_secret_letters_error(ctx, error):
 async def send_letters():
     global current_date
     current_date = datetime.date.today()
-    if current_date == launch_date:
-        logging.info('Назначенный день настал, и рассылка начата!')
-        letters_db_records = sql.get_letters_db_records()
-        for letter_db_record in letters_db_records:
-            recipient_discord_id = letter_db_record[1]
-            recipient_username = letter_db_record[2]
-            try:
-                recipient = client.get_user(recipient_discord_id)
-                letter_message = Letter(letter_db_record)
-                await recipient.send(
-                    embed=letter_message.embed,
-                    file=letter_message.image
-                )
-                logging.info(f'Валентинка для {recipient_username} отправлена!')
-            except nextcord.Forbidden:
-                logging.error(f'Валентинка для {recipient_username} не отправлена, '
-                              f'поскольку бот не имеет разрешений для отправки '
-                              f'сообщений этому пользователю')
-            except nextcord.HTTPException as e:
-                logging.error(f'Валентинка для {recipient_username} не отправлена, '
-                              f'произошла ошибка класса HTTPException. '
-                              f'Дополнительная информация: {e}')
-            except Exception as e:
-                logging.error(f'Валентинка для {recipient_username} не отправлена, '
-                              f'произошла неизвестная общая ошибка. '
-                              f'Дополнительная информация: {e}')
+    if current_date != launch_date:
+        logging.info(f'Ждем. До отправки осталось {(launch_date - current_date).days} дней')
+        return
+    logging.info('Назначенный день настал, и рассылка начата!')
+    letters_db_records = sql.get_letters_db_records()
+    for letter_db_record in letters_db_records:
+        recipient_discord_id = letter_db_record[1]
+        recipient_username = letter_db_record[2]
+        try:
+            recipient = client.get_user(recipient_discord_id)
+            letter_message = Letter(letter_db_record)
+            await recipient.send(
+                embed=letter_message.embed,
+                file=letter_message.image
+            )
+            logging.info(f'Валентинка для {recipient_username} отправлена!')
+        except nextcord.Forbidden:
+            logging.error(f'Валентинка для {recipient_username} не отправлена, '
+                          f'поскольку бот не имеет разрешений для отправки '
+                          f'сообщений этому пользователю')
+        except nextcord.HTTPException as e:
+            logging.error(f'Валентинка для {recipient_username} не отправлена, '
+                          f'произошла ошибка класса HTTPException. '
+                          f'Дополнительная информация: {e}')
+        except Exception as e:
+            logging.error(f'Валентинка для {recipient_username} не отправлена, '
+                          f'произошла неизвестная общая ошибка. '
+                          f'Дополнительная информация: {e}')
