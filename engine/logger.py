@@ -25,7 +25,7 @@ def init_logger():
                 'level': 'INFO',
                 'formatter': 'standard',
                 'class': 'logging.FileHandler',
-                'filename': 'logs/bot.log',
+                'filename': 'logs/secret-letters-bot.log',
                 'mode': 'a',
             },
         },
