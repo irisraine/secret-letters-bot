@@ -1,6 +1,17 @@
 import sqlite3
+import logging
 
 
+def catch_sql_exceptions(func):
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except sqlite3.Error as e:
+            logging.error(f'Ошибка доступа к базе данных! Дополнительная информация: {e}')
+    return wrapper
+
+
+@catch_sql_exceptions
 def create_tables():
     with sqlite3.connect("database/main.db") as db_connect:
         cursor = db_connect.cursor()
@@ -23,6 +34,7 @@ def create_tables():
             )""")
 
 
+@catch_sql_exceptions
 def add_letter_db_record(
         recipient_discord_id,
         recipient_username,
@@ -59,6 +71,7 @@ def add_letter_db_record(
         )
 
 
+@catch_sql_exceptions
 def get_letter_db_record(record_id):
     with sqlite3.connect("database/main.db") as db_connect:
         cursor = db_connect.cursor()
@@ -67,6 +80,7 @@ def get_letter_db_record(record_id):
         return cursor.fetchone()
 
 
+@catch_sql_exceptions
 def delete_letter_db_record(record_id):
     with sqlite3.connect("database/main.db") as db_connect:
         cursor = db_connect.cursor()
@@ -74,6 +88,7 @@ def delete_letter_db_record(record_id):
                        (record_id,))
 
 
+@catch_sql_exceptions
 def get_letters_by_user_db_records(sender_discord_id):
     with sqlite3.connect("database/main.db") as db_connect:
         cursor = db_connect.cursor()
@@ -83,6 +98,7 @@ def get_letters_by_user_db_records(sender_discord_id):
             yield row
 
 
+@catch_sql_exceptions
 def get_letters_db_records():
     with sqlite3.connect("database/main.db") as db_connect:
         cursor = db_connect.cursor()
@@ -91,6 +107,7 @@ def get_letters_db_records():
             yield row
 
 
+@catch_sql_exceptions
 def is_letter_send_already(sender_discord_id, recipient_discord_id):
     with sqlite3.connect("database/main.db") as db_connect:
         cursor = db_connect.cursor()
@@ -99,6 +116,7 @@ def is_letter_send_already(sender_discord_id, recipient_discord_id):
         return True if cursor.fetchone() else False
 
 
+@catch_sql_exceptions
 def get_count(sender_discord_id):
     with sqlite3.connect("database/main.db") as db_connect:
         cursor = db_connect.cursor()
@@ -107,6 +125,7 @@ def get_count(sender_discord_id):
         return cursor.fetchone()
 
 
+@catch_sql_exceptions
 def set_count(sender_discord_id):
     with sqlite3.connect("database/main.db") as db_connect:
         cursor = db_connect.cursor()
@@ -115,6 +134,7 @@ def set_count(sender_discord_id):
         return cursor.fetchone()
 
 
+@catch_sql_exceptions
 def increment_count(sender_discord_id):
     with sqlite3.connect("database/main.db") as db_connect:
         cursor = db_connect.cursor()
@@ -122,6 +142,7 @@ def increment_count(sender_discord_id):
                        (sender_discord_id,))
 
 
+@catch_sql_exceptions
 def decrement_count(sender_discord_id):
     with sqlite3.connect("database/main.db") as db_connect:
         cursor = db_connect.cursor()
