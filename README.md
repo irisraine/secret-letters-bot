@@ -16,7 +16,7 @@ messages ahead of time, and the bot will store them in a database to be automati
 
 ## Commands
 
-Just type `!start` command in selected Discord channel to publish the main menu of the bot.
+Just type `!start_secret_letters` command in selected Discord channel to publish the main menu of the bot.
 
 ## Usage
 
