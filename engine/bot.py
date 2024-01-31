@@ -66,26 +66,24 @@ class LetterForm(nextcord.ui.Modal):
         self.add_item(self.image_url)
 
     async def callback(self, interaction: Interaction) -> None:
+        await interaction.response.defer()
         recipient = nextcord.utils.get(interaction.guild.members, name=self.recipient_username.value)
         if not recipient:
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 embed=messages.recipient_error.embed, ephemeral=True
             )
         elif sql.is_letter_send_already(interaction.user.id, recipient.id):
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 embed=messages.send_already_error.embed, ephemeral=True
             )
-        if self.image_url.value:
-            image_attachment_path = image_download(self.image_url.value)
-            if not image_attachment_path:
-                return await interaction.response.send_message(
-                    embed=messages.attached_image_error.embed, ephemeral=True
-                )
-        else:
-            image_attachment_path = None
         if recipient.id == interaction.user.id:
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 embed=messages.self_sending_error.embed, ephemeral=True
+            )
+        image_binary_data, image_filename = image_download(self.image_url.value)
+        if self.image_url.value and not image_binary_data:
+            return await interaction.followup.send(
+                embed=messages.attached_image_error.embed, ephemeral=True
             )
         sql.add_letter_db_record(
             recipient_discord_id=recipient.id,
@@ -95,11 +93,12 @@ class LetterForm(nextcord.ui.Modal):
             sender_username=interaction.user.name,
             sender_alias=self.sender_alias.value,
             body_content=self.body_content.value,
-            image_attachment_path=image_attachment_path
+            image_binary_data=image_binary_data,
+            image_filename=image_filename
         )
         sql.increment_count(interaction.user.id)
         logging.info(f'Валентинка для {recipient.name} создана')
-        return await interaction.response.send_message(embed=messages.send_success.embed, ephemeral=True)
+        return await interaction.followup.send(embed=messages.send_success.embed, ephemeral=True)
 
 
 class MainMenuButtons(nextcord.ui.View):
@@ -154,6 +153,10 @@ class LettersListDropdown(nextcord.ui.Select):
 
     async def callback(self, interaction: Interaction) -> None:
         letter_db_record = sql.get_letter_db_record(self.values[0])
+        if not letter_db_record:
+            return await interaction.response.send_message(
+                embed=messages.not_exist_error.embed, ephemeral=True
+            )
         letter_message = Letter(letter_db_record)
         await interaction.response.defer()
         await interaction.edit_original_message(
@@ -189,14 +192,15 @@ class DeleteLetterButton(nextcord.ui.View):
 @client.event
 async def on_ready():
     logging.info(f'Бот залогинен под именем: {client.user.name}')
-    if not os.path.exists('database/postcards'):
-        os.makedirs('database/postcards')
+    if not os.path.exists('database'):
+        os.makedirs('database')
     sql.create_tables()
     send_letters.start()
 
 
 @client.command()
-async def start(ctx):
+@commands.has_permissions(administrator=True)
+async def start_secret_letters(ctx):
     await ctx.send(
         embed=messages.introduction.embed,
         file=messages.introduction.image
@@ -208,12 +212,18 @@ async def start(ctx):
     )
 
 
+@start_secret_letters.error
+async def start_secret_letters_error(ctx, error):
+    if isinstance(error, commands.MissingPermissions):
+        await ctx.send(embed=messages.no_permission_error.embed)
+
+
 @tasks.loop(time=launch_time)
 async def send_letters():
     global current_date
     current_date = datetime.date.today()
     if current_date == launch_date:
-        logging.info(f'Назначенный день настал, и рассылка начата!')
+        logging.info('Назначенный день настал, и рассылка начата!')
         letters_db_records = sql.get_letters_db_records()
         for letter_db_record in letters_db_records:
             recipient_discord_id = letter_db_record[1]

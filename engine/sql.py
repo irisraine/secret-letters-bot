@@ -13,12 +13,13 @@ def create_tables():
             sender_username TEXT NOT NULL,
             sender_alias TEXT,
             body_content TEXT NOT NULL,
-            image_attachment_path TEXT
+            image_binary_data BLOB,
+            image_filename TEXT
             )""")
         cursor.execute("""CREATE TABLE IF NOT EXISTS counter (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             sender_discord_id INTEGER NOT NULL,
-            count_letters INTEGER DEFAULT 0 
+            count_letters INTEGER DEFAULT 0
             )""")
 
 
@@ -30,20 +31,22 @@ def add_letter_db_record(
         sender_username,
         body_content,
         sender_alias=None,
-        image_attachment_path=None):
+        image_binary_data=None,
+        image_filename=None):
     with sqlite3.connect("database/main.db") as db_connect:
         cursor = db_connect.cursor()
         cursor.execute(
             """INSERT INTO letters (
-                recipient_discord_id, 
-                recipient_username, 
+                recipient_discord_id,
+                recipient_username,
                 recipient_globalname,
-                sender_discord_id, 
+                sender_discord_id,
                 sender_username,
                 sender_alias,
                 body_content,
-                image_attachment_path
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+                image_binary_data,
+                image_filename
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (recipient_discord_id,
              recipient_username,
              recipient_globalname,
@@ -51,7 +54,8 @@ def add_letter_db_record(
              sender_username,
              sender_alias,
              body_content,
-             image_attachment_path)
+             image_binary_data,
+             image_filename)
         )
 
 

@@ -1,6 +1,5 @@
 import requests
 import time
-import os
 
 
 def image_download(url):
@@ -15,11 +14,10 @@ def image_download(url):
         elif 'image/gif' in content_type:
             extension = '.gif'
         else:
-            return False
+            return None, None
+        image_binary_data = response.content
         current_unix_time = int(time.time())
-        filename = os.path.join('database/postcards', f'{current_unix_time}{extension}')
-        with open(filename, 'wb') as file:
-            file.write(response.content)
-        return filename
+        image_filename = f'{current_unix_time}{extension}'
+        return image_binary_data, image_filename
     except requests.exceptions.RequestException:
-        return False
+        return None, None
