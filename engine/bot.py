@@ -107,7 +107,7 @@ class MainMenuButtons(nextcord.ui.View):
 
     @nextcord.ui.button(label="Тайно признаться", style=nextcord.ButtonStyle.blurple, emoji="💌")
     async def create_letter_button(self, button: nextcord.ui.Button, interaction: nextcord.Interaction):
-        if current_date > launch_date:
+        if current_date >= launch_date:
             return await interaction.response.send_message(
                 embed=messages.expired_event.embed, ephemeral=True
             )
