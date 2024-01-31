@@ -5,8 +5,8 @@ SENDING_TARGET_DATE = {
 }
 
 SENDING_TARGET_TIME = {
-    'hour': 6,
-    'minute': 0
+    'hour': 0,
+    'minute': 30
 }
 
 BASIC_COLOR_CODE = (48, 213, 200)
