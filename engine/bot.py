@@ -21,7 +21,7 @@ launch_time = datetime.time(
     minute=config.SENDING_TARGET_TIME['minute']
 )
 current_date = datetime.date.today()
-sending_date = datetime.date(1970, 1, 1)
+sending_date = datetime.date(2024, 2, 14)
 send_already_letters_count = 0
 
 
@@ -191,14 +191,14 @@ class NewEventCreationForm(nextcord.ui.Modal):
     def __init__(self):
         super().__init__("Создать новый ивент")
 
-        self.event_name = nextcord.ui.TextInput(
+        self.event_title = nextcord.ui.TextInput(
             label="Название ивента",
             min_length=3,
             max_length=50,
             required=True,
             style=nextcord.TextInputStyle.short
         )
-        self.add_item(self.event_name)
+        self.add_item(self.event_title)
         self.event_description = nextcord.ui.TextInput(
             label="Текст приветственного сообщения",
             max_length=4000,
@@ -206,39 +206,39 @@ class NewEventCreationForm(nextcord.ui.Modal):
             style=nextcord.TextInputStyle.paragraph
         )
         self.add_item(self.event_description)
-        self.sending_date = nextcord.ui.TextInput(
+        self.event_sending_date = nextcord.ui.TextInput(
             label="Дата отправки писем",
             required=True,
             placeholder="Дата в формате дд.мм.гггг",
             style=nextcord.TextInputStyle.short
         )
-        self.add_item(self.sending_date)
-        self.image_url = nextcord.ui.TextInput(
+        self.add_item(self.event_sending_date)
+        self.event_image_url = nextcord.ui.TextInput(
             label="URL изображения в приветственном сообщении",
             max_length=200,
             required=True,
             placeholder="В формате PNG или JPG",
             style=nextcord.TextInputStyle.short
         )
-        self.add_item(self.image_url)
+        self.add_item(self.event_image_url)
 
     async def callback(self, interaction: Interaction) -> None:
         await interaction.response.defer()
         global event_settings
-        new_sending_date = utils.get_parsed_date(self.sending_date.value)
-        if not new_sending_date:
+        event_sending_date = utils.get_parsed_date(self.event_sending_date.value)
+        if not event_sending_date:
             return await interaction.followup.send(
                 embed=messages.invalid_date_warning().embed, ephemeral=True
             )
-        image_binary_data, _ = utils.image_download(self.image_url.value)
+        image_binary_data, _ = utils.image_download(self.event_image_url.value)
         if not image_binary_data:
             return await interaction.followup.send(
                 embed=messages.attached_image_error().embed, ephemeral=True
             )
         event_settings = {
-            "title": self.event_name.value,
+            "title": self.event_title.value,
             "description": self.event_description.value,
-            "sending_date": new_sending_date
+            "sending_date": event_sending_date
         }
         utils.save_event_settings(event_settings)
         utils.save_image_file(image_binary_data)
