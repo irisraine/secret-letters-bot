@@ -6,12 +6,12 @@ The Secret Letters Bot is a Discord bot designed to spread love and joy on the s
 users to send anonymous private messages with greetings to their friends, crushes, or anyone they appreciate within 
 the Discord server. Users can compose their messages ahead of time, and the bot will store them in a database to be 
 automatically sent on given date.
-By default, the bot settings are set to send messages on Valentine's Day, but you can change this via admin panel. 
+By default, the bot settings are set to send messages on Valentine's Day, but you can change the schedule date via admin panel. 
 
 ## Features
 
 - **Anonymity**: Senders' identities are kept confidential to maintain the surprise and fun of receiving an anonymous message.
-- **Scheduled Delivery**: Messages are stored securely and sent out on Valentine's Day, ensuring timely delivery of warm wishes.
+- **Scheduled Delivery**: Messages are stored securely and sent out on scheduled date, ensuring timely delivery of warm wishes.
 - **Custom Greetings**: Users can personalize their messages, making each greeting unique and heartfelt.
 - **Easy to Use**: The bot provides simple interface for users to write and submit their Valentine's messages.
 
