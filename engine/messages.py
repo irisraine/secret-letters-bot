@@ -8,7 +8,7 @@ class MessageContainer:
         self.__embed = nextcord.Embed(
             title=title,
             description=description,
-            colour=nextcord.Colour.from_rgb(48, 213, 200),
+            colour=nextcord.Colour.from_rgb(*config.BASIC_COLOR_CODE),
         )
         if image_binary_data:
             fp = io.BytesIO(image_binary_data)
@@ -156,7 +156,7 @@ def not_exist_error():
 def deletion():
     return MessageContainer(
         title="Под нож!",
-        description="Письмо удалена :("
+        description="Письмо удалено :("
     )
 
 

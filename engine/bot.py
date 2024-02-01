@@ -349,6 +349,7 @@ async def send_letters():
             logging.error(f'Письмо для {recipient_username} не отправлено, '
                           f'произошла неизвестная общая ошибка. '
                           f'Дополнительная информация: {e}')
+    logging.info(f'Рассылка завершена! Отправлено {send_already_letters_count} писем.')
 
 
 @client.event
