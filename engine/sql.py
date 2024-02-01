@@ -35,6 +35,15 @@ def create_tables():
 
 
 @catch_sql_exceptions
+def drop_tables():
+    with sqlite3.connect("database/main.db") as db_connect:
+        cursor = db_connect.cursor()
+        cursor.execute("DROP TABLE IF EXISTS letters")
+        cursor.execute("DROP TABLE IF EXISTS counter")
+        create_tables()
+
+
+@catch_sql_exceptions
 def add_letter_db_record(
         recipient_discord_id,
         recipient_username,
@@ -114,6 +123,14 @@ def is_letter_send_already(sender_discord_id, recipient_discord_id):
         cursor.execute("SELECT * FROM letters WHERE sender_discord_id = ? AND recipient_discord_id = ?",
                        (sender_discord_id, recipient_discord_id))
         return True if cursor.fetchone() else False
+
+
+@catch_sql_exceptions
+def count_letters():
+    with sqlite3.connect("database/main.db") as db_connect:
+        cursor = db_connect.cursor()
+        cursor.execute("SELECT COUNT(*) FROM letters")
+        return cursor.fetchone()[0]
 
 
 @catch_sql_exceptions
