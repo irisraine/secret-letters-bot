@@ -315,12 +315,6 @@ class DropDatabaseButton(nextcord.ui.View):
         )
 
 
-async def is_admin(interaction: nextcord.Interaction):
-    if not interaction.user.guild_permissions.administrator:
-        return await interaction.response.send_message(
-            embed=messages.admin_option_only_warning().embed, ephemeral=True)
-
-
 def apply_event_settings():
     global event_settings
     global sending_date
