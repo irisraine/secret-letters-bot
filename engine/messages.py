@@ -187,6 +187,13 @@ def admin_instruction():
     )
 
 
+def admin_option_only_warning():
+    return MessageContainer(
+        title=ERROR_HEADER,
+        description="Использовать опции админ-панели могут только администраторы сервера."
+    )
+
+
 def new_event_successful_created():
     return MessageContainer(
         title="Успех!",

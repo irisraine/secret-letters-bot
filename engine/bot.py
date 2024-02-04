@@ -254,6 +254,14 @@ class AdminMenuButtons(nextcord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
 
+    async def interaction_check(self, interaction: nextcord.Interaction):
+        if interaction.user.guild_permissions.administrator:
+            return True
+        else:
+            await interaction.response.send_message(
+                embed=messages.admin_option_only_warning().embed, ephemeral=True)
+            return False
+
     @nextcord.ui.button(label="Новый ивент", style=nextcord.ButtonStyle.blurple, emoji="🪄")
     async def create_new_event_button(self, button: nextcord.ui.Button, interaction: nextcord.Interaction):
         await interaction.response.send_modal(NewEventCreationForm())
@@ -305,6 +313,12 @@ class DropDatabaseButton(nextcord.ui.View):
             attachments=[],
             view=None
         )
+
+
+async def is_admin(interaction: nextcord.Interaction):
+    if not interaction.user.guild_permissions.administrator:
+        return await interaction.response.send_message(
+            embed=messages.admin_option_only_warning().embed, ephemeral=True)
 
 
 def apply_event_settings():
