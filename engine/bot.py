@@ -68,7 +68,7 @@ class LetterForm(nextcord.ui.Modal):
         recipient = nextcord.utils.get(interaction.guild.members, name=self.recipient_username.value)
         if not recipient:
             return await interaction.followup.send(
-                embed=messages.recipient_error().embed, ephemeral=True
+                embed=messages.recipient_error(self.recipient_username.value).embed, ephemeral=True
             )
         elif sql.is_letter_send_already(interaction.user.id, recipient.id):
             return await interaction.followup.send(
@@ -96,7 +96,9 @@ class LetterForm(nextcord.ui.Modal):
         )
         sql.increment_count(interaction.user.id)
         logging.info(f'Письмо для {recipient.name} создано')
-        return await interaction.followup.send(embed=messages.send_success().embed, ephemeral=True)
+        return await interaction.followup.send(
+            embed=messages.send_success(recipient.name).embed, ephemeral=True
+        )
 
 
 class MainMenuButtons(nextcord.ui.View):
@@ -269,11 +271,12 @@ class AdminMenuButtons(nextcord.ui.View):
     @nextcord.ui.button(label="Ручная рассылка", style=nextcord.ButtonStyle.blurple, emoji="📨")
     async def manual_send_letters_button(self, button: nextcord.ui.Button, interaction: nextcord.Interaction):
         await interaction.response.defer()
-        logging.info('Экстренная ручная рассылка писем начата')
+        days_before_scheduled_start = (sending_date - current_date).days
         await interaction.followup.send(
-            embed=messages.manual_sending_start().embed, ephemeral=True
+            embed=messages.manual_sending_warning(days_before_scheduled_start).embed,
+            view=StartManualSendLettersButton(),
+            ephemeral=True
         )
-        await send_letters()
 
     @nextcord.ui.button(label="Статистика", style=nextcord.ButtonStyle.blurple, emoji="📈")
     async def stats_button(self, button: nextcord.ui.Button, interaction: nextcord.Interaction):
@@ -293,7 +296,6 @@ class AdminMenuButtons(nextcord.ui.View):
     async def drop_database_button(self, button: nextcord.ui.Button, interaction: nextcord.Interaction):
         await interaction.response.send_message(
             embed=messages.database_deletion_warning().embed,
-            file=messages.database_deletion_warning().image,
             view=DropDatabaseButton(),
             ephemeral=True
         )
@@ -310,9 +312,23 @@ class DropDatabaseButton(nextcord.ui.View):
         logging.info('Все информация в базе данных стерта')
         await interaction.edit_original_message(
             embed=messages.database_deletion().embed,
-            attachments=[],
             view=None
         )
+
+
+class StartManualSendLettersButton(nextcord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=None)
+
+    @nextcord.ui.button(label="Начать ручную рассылку", style=nextcord.ButtonStyle.green, emoji="📬")
+    async def manual_send_letters_confirm_button(self, button: nextcord.ui.Button, interaction: nextcord.Interaction):
+        await interaction.response.defer()
+        logging.info('Экстренная ручная рассылка писем начата')
+        await interaction.edit_original_message(
+            embed=messages.manual_sending_start().embed,
+            view=None
+        )
+        await send_letters()
 
 
 def apply_event_settings():
@@ -406,8 +422,12 @@ async def permission_error(ctx, error):
 async def scheduled_send_letters():
     global current_date
     current_date = datetime.date.today()
-    if current_date != sending_date:
+    if current_date < sending_date:
         logging.info(f'Ждем. До отправки осталось {(sending_date - current_date).days} дней')
+        return
+    elif current_date > sending_date:
+        logging.info(f"Ивент \"{event_settings['title']}\" завершен, с момента окончания прошло уже "
+                     f"{(current_date - sending_date).days} дней")
         return
     logging.info('Назначенный день настал, и рассылка начата!')
     await send_letters()
