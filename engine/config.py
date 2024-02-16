@@ -1,5 +1,5 @@
 SENDING_TARGET_TIME = {
-    'hour': 8,
+    'hour': 5,
     'minute': 0
 }
 

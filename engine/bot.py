@@ -9,7 +9,7 @@ import engine.sql as sql
 import engine.config as config
 import engine.messages as messages
 import engine.utils as utils
-from engine.messages import Letter, MessageContainer
+from engine.messages import Letter
 
 load_dotenv()
 intents = nextcord.Intents.all()
@@ -23,6 +23,7 @@ launch_time = datetime.time(
 current_date = datetime.date.today()
 sending_date = datetime.date(2024, 2, 14)
 send_already_letters_count = 0
+send_failure_recipients = set()
 
 
 class LetterForm(nextcord.ui.Modal):
@@ -106,7 +107,7 @@ class MainMenuButtons(nextcord.ui.View):
         super().__init__(timeout=None)
 
     @nextcord.ui.button(label="Тайно признаться", style=nextcord.ButtonStyle.blurple, emoji="💌")
-    async def create_letter_button(self, button: nextcord.ui.Button, interaction: nextcord.Interaction):
+    async def create_letter_callback(self, button: nextcord.ui.Button, interaction: nextcord.Interaction):
         if current_date >= sending_date:
             return await interaction.response.send_message(
                 embed=messages.expired_event().embed, ephemeral=True
@@ -121,8 +122,8 @@ class MainMenuButtons(nextcord.ui.View):
         await interaction.response.send_modal(LetterForm())
 
     @nextcord.ui.button(label="Список отправленных писем", style=nextcord.ButtonStyle.blurple, emoji="📋")
-    async def list_of_my_letters_button(self, button: nextcord.ui.Button, interaction: nextcord.Interaction):
-        letters_by_user_db_records = sql.get_letters_by_user_db_records(interaction.user.id)
+    async def list_of_my_letters_callback(self, button: nextcord.ui.Button, interaction: nextcord.Interaction):
+        letters_by_user_db_records = sql.get_letters_by_sender_db_records(interaction.user.id)
         options = []
         for letter_db_record in letters_by_user_db_records:
             record_id = letter_db_record[0]
@@ -178,7 +179,7 @@ class DeleteLetterButton(nextcord.ui.View):
         self.record_id = record_id
 
     @nextcord.ui.button(label="Удалить письмо", style=nextcord.ButtonStyle.red, emoji="🔪")
-    async def delete_letter_button(self, button: nextcord.ui.Button, interaction: nextcord.Interaction):
+    async def delete_letter_callback(self, button: nextcord.ui.Button, interaction: nextcord.Interaction):
         sql.delete_letter_db_record(self.record_id)
         sql.decrement_count(interaction.user.id)
         await interaction.response.defer()
@@ -246,7 +247,9 @@ class NewEventCreationForm(nextcord.ui.Modal):
         utils.save_image_file(image_binary_data)
         apply_event_settings()
         global send_already_letters_count
+        global send_failure_recipients
         send_already_letters_count = 0
+        send_failure_recipients = set()
         return await interaction.followup.send(
             embed=messages.new_event_successful_created().embed, ephemeral=True
         )
@@ -265,11 +268,11 @@ class AdminMenuButtons(nextcord.ui.View):
             return False
 
     @nextcord.ui.button(label="Новый ивент", style=nextcord.ButtonStyle.blurple, emoji="🪄")
-    async def create_new_event_button(self, button: nextcord.ui.Button, interaction: nextcord.Interaction):
+    async def create_new_event_callback(self, button: nextcord.ui.Button, interaction: nextcord.Interaction):
         await interaction.response.send_modal(NewEventCreationForm())
 
     @nextcord.ui.button(label="Ручная рассылка", style=nextcord.ButtonStyle.blurple, emoji="📨")
-    async def manual_send_letters_button(self, button: nextcord.ui.Button, interaction: nextcord.Interaction):
+    async def manual_send_letters_callback(self, button: nextcord.ui.Button, interaction: nextcord.Interaction):
         await interaction.response.defer()
         days_before_scheduled_start = (sending_date - current_date).days
         await interaction.followup.send(
@@ -279,21 +282,20 @@ class AdminMenuButtons(nextcord.ui.View):
         )
 
     @nextcord.ui.button(label="Статистика", style=nextcord.ButtonStyle.blurple, emoji="📈")
-    async def stats_button(self, button: nextcord.ui.Button, interaction: nextcord.Interaction):
+    async def stats_callback(self, button: nextcord.ui.Button, interaction: nextcord.Interaction):
         await interaction.response.defer()
         all_letters_count = sql.count_letters()
-        stats = MessageContainer(
-            title="Статистика",
-            description=f"Общее количество писем, написанных участниками: **{all_letters_count}**\n"
-                        f"Количество отправленных ботом писем: **{send_already_letters_count}**\n\n"
-                        f"Дата отправки сообщений: {sending_date}"
-        )
         await interaction.followup.send(
-            embed=stats.embed, file=stats.image, ephemeral=True
+            embed=messages.stats(
+                all_letters_count,
+                send_already_letters_count,
+                sending_date,
+                send_failure_recipients).embed,
+            ephemeral=True
         )
 
     @nextcord.ui.button(label="Стереть базу данных", style=nextcord.ButtonStyle.blurple, emoji="🔥")
-    async def drop_database_button(self, button: nextcord.ui.Button, interaction: nextcord.Interaction):
+    async def drop_database_callback(self, button: nextcord.ui.Button, interaction: nextcord.Interaction):
         await interaction.response.send_message(
             embed=messages.database_deletion_warning().embed,
             view=DropDatabaseButton(),
@@ -306,7 +308,7 @@ class DropDatabaseButton(nextcord.ui.View):
         super().__init__(timeout=None)
 
     @nextcord.ui.button(label="Удалить содержимое", style=nextcord.ButtonStyle.red, emoji="🔪")
-    async def drop_database_confirm_button(self, button: nextcord.ui.Button, interaction: nextcord.Interaction):
+    async def drop_database_confirm_callback(self, button: nextcord.ui.Button, interaction: nextcord.Interaction):
         await interaction.response.defer()
         sql.drop_tables()
         logging.info('Все информация в базе данных стерта')
@@ -319,16 +321,27 @@ class DropDatabaseButton(nextcord.ui.View):
 class StartManualSendLettersButton(nextcord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
+        self.manual_send_failed_letters_callback.disabled = not send_failure_recipients
 
-    @nextcord.ui.button(label="Начать ручную рассылку", style=nextcord.ButtonStyle.green, emoji="📬")
-    async def manual_send_letters_confirm_button(self, button: nextcord.ui.Button, interaction: nextcord.Interaction):
+    @nextcord.ui.button(label="Разослать все письма", style=nextcord.ButtonStyle.green, emoji="📬")
+    async def manual_send_all_letters_callback(self, button: nextcord.ui.Button, interaction: nextcord.Interaction):
         await interaction.response.defer()
-        logging.info('Экстренная ручная рассылка писем начата')
+        logging.info('Ручная рассылка писем начата')
         await interaction.edit_original_message(
             embed=messages.manual_sending_start().embed,
             view=None
         )
         await send_letters()
+
+    @nextcord.ui.button(label="Разослать неотправленные письма", style=nextcord.ButtonStyle.green, emoji="📮")
+    async def manual_send_failed_letters_callback(self, button: nextcord.ui.Button, interaction: nextcord.Interaction):
+        await interaction.response.defer()
+        logging.info('Ручная рассылка неотправленных писем отдельным пользователям начата')
+        await interaction.edit_original_message(
+            embed=messages.manual_sending_start().embed,
+            view=None
+        )
+        await send_letters(send_failure_recipients)
 
 
 def apply_event_settings():
@@ -345,10 +358,19 @@ def apply_event_settings():
     )
 
 
-async def send_letters():
+async def send_letters(custom_recipients=None):
+    if custom_recipients:
+        letters_db_records = []
+        for custom_recipient in custom_recipients:
+            recipient_letters_db_record = list(sql.get_letters_by_recipient_db_records(custom_recipient[0]))
+            print(recipient_letters_db_record)
+            letters_db_records.extend(recipient_letters_db_record)
+    else:
+        letters_db_records = sql.get_letters_db_records()
     global send_already_letters_count
+    global send_failure_recipients
     send_already_letters_count = 0
-    letters_db_records = sql.get_letters_db_records()
+    send_failure_recipients = set()
     for letter_db_record in letters_db_records:
         recipient_discord_id = letter_db_record[1]
         recipient_username = letter_db_record[2]
@@ -362,14 +384,17 @@ async def send_letters():
             send_already_letters_count += 1
             logging.info(f'Письмо для {recipient_username} отправлено!')
         except nextcord.Forbidden:
+            send_failure_recipients.add((recipient_discord_id, recipient_username))
             logging.error(f'Письмо для {recipient_username} не отправлено, '
                           f'поскольку бот не имеет разрешений для отправки '
                           f'сообщений этому пользователю')
         except nextcord.HTTPException as e:
+            send_failure_recipients.add((recipient_discord_id, recipient_username))
             logging.error(f'Письмо для {recipient_username} не отправлено, '
                           f'произошла ошибка класса HTTPException. '
                           f'Дополнительная информация: {e}')
         except Exception as e:
+            send_failure_recipients.add((recipient_discord_id, recipient_username))
             logging.error(f'Письмо для {recipient_username} не отправлено, '
                           f'произошла неизвестная общая ошибка. '
                           f'Дополнительная информация: {e}')
@@ -389,10 +414,9 @@ async def on_ready():
 @client.command()
 @commands.has_permissions(administrator=True)
 async def start_secret_letters(ctx):
-    introduction = MessageContainer(
-        title=f"**{event_settings['title']}**",
-        description=event_settings['description'],
-        image_path=config.INTRODUCTION_IMAGE_FILEPATH
+    introduction = messages.introduction(
+        event_settings['title'],
+        event_settings['description']
     )
     await ctx.send(
         embeds=[introduction.embed, messages.instruction().embed],

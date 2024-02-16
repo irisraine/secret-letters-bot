@@ -98,11 +98,21 @@ def delete_letter_db_record(record_id):
 
 
 @catch_sql_exceptions
-def get_letters_by_user_db_records(sender_discord_id):
+def get_letters_by_sender_db_records(sender_discord_id):
     with sqlite3.connect("database/main.db") as db_connect:
         cursor = db_connect.cursor()
         cursor.execute("SELECT * FROM letters WHERE sender_discord_id = ?",
                        (sender_discord_id,))
+        for row in cursor:
+            yield row
+
+
+@catch_sql_exceptions
+def get_letters_by_recipient_db_records(recipient_discord_id):
+    with sqlite3.connect("database/main.db") as db_connect:
+        cursor = db_connect.cursor()
+        cursor.execute("SELECT * FROM letters WHERE recipient_discord_id = ?",
+                       (recipient_discord_id,))
         for row in cursor:
             yield row
 
