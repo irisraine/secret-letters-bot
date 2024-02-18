@@ -258,6 +258,7 @@ class NewEventCreationForm(nextcord.ui.Modal):
         global send_failure_recipients
         send_already_letters_count = 0
         send_failure_recipients = set()
+        logging.info(f'Создан новый ивент "{self.event_title.value}"')
         return await interaction.followup.send(
             embed=messages.new_event_successful_created().embed, ephemeral=True
         )
