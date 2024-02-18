@@ -253,6 +253,7 @@ class NewEventCreationForm(nextcord.ui.Modal):
         utils.save_event_settings(event_settings)
         utils.save_image_file(image_binary_data)
         apply_event_settings()
+        sql.drop_tables()
         global send_already_letters_count
         global send_failure_recipients
         global event_timestamp
