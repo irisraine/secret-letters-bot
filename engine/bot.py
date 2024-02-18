@@ -22,6 +22,7 @@ launch_time = datetime.time(
 )
 current_date = datetime.date.today()
 sending_date = datetime.date(2024, 2, 14)
+event_timestamp = 1
 send_already_letters_count = 0
 send_failure_recipients = set()
 
@@ -105,10 +106,11 @@ class LetterForm(nextcord.ui.Modal):
 class MainMenuButtons(nextcord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
+        self.current_event_timestamp = event_timestamp
 
     @nextcord.ui.button(label="Тайно признаться", style=nextcord.ButtonStyle.blurple, emoji="💌")
     async def create_letter_callback(self, button: nextcord.ui.Button, interaction: nextcord.Interaction):
-        if current_date >= sending_date:
+        if current_date >= sending_date or self.current_event_timestamp != event_timestamp:
             return await interaction.response.send_message(
                 embed=messages.expired_event().embed, ephemeral=True
             )
@@ -123,6 +125,10 @@ class MainMenuButtons(nextcord.ui.View):
 
     @nextcord.ui.button(label="Список отправленных писем", style=nextcord.ButtonStyle.blurple, emoji="📋")
     async def list_of_my_letters_callback(self, button: nextcord.ui.Button, interaction: nextcord.Interaction):
+        if self.current_event_timestamp != event_timestamp:
+            return await interaction.response.send_message(
+                embed=messages.old_event().embed, ephemeral=True
+            )
         letters_by_user_db_records = sql.get_letters_by_sender_db_records(interaction.user.id)
         options = []
         for letter_db_record in letters_by_user_db_records:
@@ -241,15 +247,18 @@ class NewEventCreationForm(nextcord.ui.Modal):
         event_settings = {
             "title": self.event_title.value,
             "description": self.event_description.value,
-            "sending_date": event_sending_date
+            "sending_date": event_sending_date,
+            "event_timestamp": int(datetime.datetime.now().timestamp())
         }
         utils.save_event_settings(event_settings)
         utils.save_image_file(image_binary_data)
         apply_event_settings()
         global send_already_letters_count
         global send_failure_recipients
+        global event_timestamp
         send_already_letters_count = 0
         send_failure_recipients = set()
+        event_timestamp = event_settings['event_timestamp']
         return await interaction.followup.send(
             embed=messages.new_event_successful_created().embed, ephemeral=True
         )
