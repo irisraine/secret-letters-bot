@@ -374,7 +374,6 @@ async def send_letters(custom_recipients=None):
         letters_db_records = []
         for custom_recipient in custom_recipients:
             recipient_letters_db_record = list(sql.get_letters_by_recipient_db_records(custom_recipient[0]))
-            print(recipient_letters_db_record)
             letters_db_records.extend(recipient_letters_db_record)
     else:
         letters_db_records = sql.get_letters_db_records()
