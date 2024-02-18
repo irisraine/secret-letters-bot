@@ -256,10 +256,8 @@ class NewEventCreationForm(nextcord.ui.Modal):
         sql.drop_tables()
         global send_already_letters_count
         global send_failure_recipients
-        global event_timestamp
         send_already_letters_count = 0
         send_failure_recipients = set()
-        event_timestamp = event_settings['event_timestamp']
         return await interaction.followup.send(
             embed=messages.new_event_successful_created().embed, ephemeral=True
         )
@@ -357,6 +355,7 @@ class StartManualSendLettersButton(nextcord.ui.View):
 def apply_event_settings():
     global event_settings
     global sending_date
+    global event_timestamp
     event_settings = utils.load_event_settings()
     if not event_settings:
         logging.error('Конфигурационный файл settings.json не найден. Работа бота невозможна!')
@@ -366,6 +365,7 @@ def apply_event_settings():
         month=event_settings['sending_date']['month'],
         year=event_settings['sending_date']['year']
     )
+    event_timestamp = event_settings['event_timestamp']
 
 
 async def send_letters(custom_recipients=None):
