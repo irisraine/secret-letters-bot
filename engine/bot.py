@@ -418,7 +418,8 @@ async def on_ready():
         os.makedirs('database')
     apply_event_settings()
     sql.create_tables()
-    scheduled_send_letters.start()
+    if not scheduled_send_letters.is_running():
+        scheduled_send_letters.start()
 
 
 @client.command()
